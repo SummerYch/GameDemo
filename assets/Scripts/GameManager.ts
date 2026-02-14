@@ -105,15 +105,15 @@ export class GameManager extends Component {
         }
 
         if (this.stepsLabel) {
-          this.stepsLabel.string = "0"; // 将步数重置为0
+          this.stepsLabel.string = "0";
         }
 
-        setTimeout(() => {
-          //直接设置active会直接开始监听鼠标事件，做了一下延迟处理
-          if (this.playerCtrl) {
-            this.playerCtrl.setInputActive(true);
-          }
-        }, 0.1);
+        if (this.playerCtrl) {
+          this.playerCtrl.setInputActive(false);
+          this.scheduleOnce(() => {
+            this.playerCtrl!.doAutoJump();
+          }, 0.2);
+        }
         break;
       case GameState.GS_END:
         break;
@@ -125,6 +125,21 @@ export class GameManager extends Component {
         "" + (moveIndex >= this.roadLength ? this.roadLength : moveIndex);
     }
     this.checkResult(moveIndex);
+    if (
+      this.playerCtrl &&
+      moveIndex < this.roadLength &&
+      this._road[moveIndex] !== BlockType.BT_NONE
+    ) {
+      const nextBlock = this._road[moveIndex + 1];
+      if (nextBlock === BlockType.BT_NONE) {
+        this.playerCtrl.enterPitJumpMode();
+      } else {
+        this.playerCtrl.setInputActive(false);
+        this.scheduleOnce(() => {
+          this.playerCtrl!.doAutoJump();
+        }, this.playerCtrl.autoJumpDelay);
+      }
+    }
   }
   checkResult(moveIndex: number) {
     if (moveIndex < this.roadLength) {

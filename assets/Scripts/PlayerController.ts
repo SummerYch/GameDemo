@@ -8,37 +8,74 @@ export const BLOCK_SIZE = 40;
 export class PlayerController extends Component {
   @property(Animation)
   BodyAnim: Animation = null;
+  @property
+  autoJumpDelay: number = 0.5;
+  @property
+  pitJumpTimeout: number = 1.5;
+  @property({ tooltip: "跳跃位移时长（秒）" })
+  jumpDuration: number = 0.15;
+  @property({ tooltip: "动画播放倍速，越大越快" })
+  animationSpeed: number = 2;
   private _startJump: boolean = false;
   private _jumpStep: number = 0;
   private _curJumpTime: number = 0;
-  private _jumpTime: number = 0.1;
+  private _jumpTime: number = 0.15;
   private _curJumpSpeed: number = 0;
   private _curPos: Vec3 = new Vec3();
   private _deltaPos: Vec3 = new Vec3(0, 0, 0);
   private _targetPos: Vec3 = new Vec3();
   private _curMoveIndex: number = 0;
-  start() {
-    // input.on(Input.EventType.MOUSE_UP, this.onMouseUp, this);
-  }
+  private _pitJumpMode: boolean = false;
+
+  start() {}
+
   setInputActive(active: boolean) {
     if (active) {
       input.on(Input.EventType.MOUSE_UP, this.onMouseUp, this);
     } else {
       input.off(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+      this.exitPitJumpMode();
     }
   }
+
   reset() {
     this._curMoveIndex = 0;
+    this._pitJumpMode = false;
+    this.unschedule(this.onPitTimeout);
     this.node.getPosition(this._curPos);
     this._targetPos.set(0, 0, 0);
   }
 
+  getCurMoveIndex(): number {
+    return this._curMoveIndex;
+  }
+
+  /** 进入坑前等待点击模式，超时未点击则掉入坑中 */
+  enterPitJumpMode() {
+    this._pitJumpMode = true;
+    this.setInputActive(true);
+    this.scheduleOnce(this.onPitTimeout, this.pitJumpTimeout);
+  }
+
+  exitPitJumpMode() {
+    this._pitJumpMode = false;
+    this.unschedule(this.onPitTimeout);
+  }
+
+  private onPitTimeout = () => {
+    this.exitPitJumpMode();
+    this.jumpByStep(1);
+  };
+
+  /** 执行一次自动跳（1格） */
+  doAutoJump() {
+    this.jumpByStep(1);
+  }
+
   onMouseUp(event: EventMouse) {
-    if (event.getButton() === 0) {
-      this.jumpByStep(1);
-    } else if (event.getButton() === 2) {
-      this.jumpByStep(2);
-    }
+    if (!this._pitJumpMode) return;
+    this.exitPitJumpMode();
+    this.jumpByStep(2);
   }
 
   jumpByStep(step: number) {
@@ -48,6 +85,7 @@ export class PlayerController extends Component {
     this._startJump = true;
     this._jumpStep = step;
     this._curJumpTime = 0;
+    this._jumpTime = this.jumpDuration;
     this._curJumpSpeed = (this._jumpStep * BLOCK_SIZE) / this._jumpTime;
     this.node.getPosition(this._curPos);
     Vec3.add(
@@ -57,10 +95,11 @@ export class PlayerController extends Component {
     );
 
     if (this.BodyAnim) {
-      if (step === 1) {
-        this.BodyAnim.play("oneStep");
-      } else if (step === 2) {
-        this.BodyAnim.play("twoStep");
+      const clipName = step === 1 ? "oneStep" : "twoStep";
+      this.BodyAnim.play(clipName);
+      const state = this.BodyAnim.getState(clipName);
+      if (state) {
+        state.speed = this.animationSpeed;
       }
     }
 
