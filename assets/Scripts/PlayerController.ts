@@ -73,8 +73,12 @@ export class PlayerController extends Component {
   }
 
   onMouseUp(event: EventMouse) {
-    if (!this._pitJumpMode) return;
-    this.exitPitJumpMode();
+    if (this._startJump) return;
+    if (this._pitJumpMode) {
+      this.exitPitJumpMode();
+    } else {
+      this.node.emit("ManualJump");
+    }
     this.jumpByStep(2);
   }
 

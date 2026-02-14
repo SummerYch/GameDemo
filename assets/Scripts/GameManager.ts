@@ -34,12 +34,23 @@ export class GameManager extends Component {
   @property({ type: Label })
   public stepsLabel: Label | null = null; // 计步器
 
+  private _curState: GameState = GameState.GS_INIT;
+
   //   start() {
   //     this.generateRoad();
   //   }
   start() {
     this.setCurState(GameState.GS_INIT);
     this.playerCtrl?.node.on("JumpEnd", this.onPlayerJumpEnd, this);
+    this.playerCtrl?.node.on("ManualJump", this.onManualJump, this);
+  }
+
+  private _doAutoJump = () => {
+    this.playerCtrl?.doAutoJump();
+  };
+
+  onManualJump() {
+    this.unschedule(this._doAutoJump);
   }
   init() {
     if (this.startMenu) {
@@ -62,7 +73,9 @@ export class GameManager extends Component {
     this._road.push(BlockType.BT_STONE);
 
     for (let i = 1; i < this.roadLength; i++) {
-      if (this._road[i - 1] === BlockType.BT_NONE) {
+      if (i < 5) {
+        this._road.push(BlockType.BT_STONE);
+      } else if (this._road[i - 1] === BlockType.BT_NONE) {
         this._road.push(BlockType.BT_STONE);
       } else {
         this._road.push(Math.floor(Math.random() * 2));
@@ -92,9 +105,13 @@ export class GameManager extends Component {
     return block;
   }
   onStartButtonClicked() {
+    if (this._curState === GameState.GS_END) {
+      this.init();
+    }
     this.setCurState(GameState.GS_PLAYING);
   }
   setCurState(value: GameState) {
+    this._curState = value;
     switch (value) {
       case GameState.GS_INIT:
         this.init();
@@ -109,13 +126,18 @@ export class GameManager extends Component {
         }
 
         if (this.playerCtrl) {
-          this.playerCtrl.setInputActive(false);
-          this.scheduleOnce(() => {
-            this.playerCtrl!.doAutoJump();
-          }, 0.2);
+          this.playerCtrl.setInputActive(true);
+          this.scheduleOnce(this._doAutoJump, 0.2);
         }
         break;
       case GameState.GS_END:
+        this.unschedule(this._doAutoJump);
+        if (this.playerCtrl) {
+          this.playerCtrl.setInputActive(false);
+        }
+        if (this.startMenu) {
+          this.startMenu.active = true;
+        }
         break;
     }
   }
@@ -134,22 +156,16 @@ export class GameManager extends Component {
       if (nextBlock === BlockType.BT_NONE) {
         this.playerCtrl.enterPitJumpMode();
       } else {
-        this.playerCtrl.setInputActive(false);
-        this.scheduleOnce(() => {
-          this.playerCtrl!.doAutoJump();
-        }, this.playerCtrl.autoJumpDelay);
+        this.scheduleOnce(this._doAutoJump, this.playerCtrl.autoJumpDelay);
       }
     }
   }
   checkResult(moveIndex: number) {
     if (moveIndex < this.roadLength) {
       if (this._road[moveIndex] == BlockType.BT_NONE) {
-        //跳到了空方块上
-
-        this.setCurState(GameState.GS_INIT);
+        this.setCurState(GameState.GS_END);
       }
     } else {
-      // 跳过了最大长度
       this.setCurState(GameState.GS_INIT);
     }
   }
