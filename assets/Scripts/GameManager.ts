@@ -152,12 +152,7 @@ export class GameManager extends Component {
       moveIndex < this.roadLength &&
       this._road[moveIndex] !== BlockType.BT_NONE
     ) {
-      const nextBlock = this._road[moveIndex + 1];
-      if (nextBlock === BlockType.BT_NONE) {
-        this.playerCtrl.enterPitJumpMode();
-      } else {
-        this.scheduleOnce(this._doAutoJump, this.playerCtrl.autoJumpDelay);
-      }
+      this.scheduleOnce(this._doAutoJump, this.playerCtrl.autoJumpDelay);
     }
   }
   checkResult(moveIndex: number) {

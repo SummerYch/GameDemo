@@ -1,4 +1,12 @@
-import { _decorator, Component, Vec3, EventMouse, input, Input } from "cc";
+import {
+  _decorator,
+  Component,
+  Vec3,
+  EventMouse,
+  EventTouch,
+  input,
+  Input,
+} from "cc";
 import { Animation } from "cc";
 const { ccclass, property } = _decorator;
 
@@ -32,8 +40,10 @@ export class PlayerController extends Component {
   setInputActive(active: boolean) {
     if (active) {
       input.on(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+      input.on(Input.EventType.TOUCH_END, this.onTouchEnd, this);
     } else {
       input.off(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+      input.off(Input.EventType.TOUCH_END, this.onTouchEnd, this);
       this.exitPitJumpMode();
     }
   }
@@ -73,6 +83,15 @@ export class PlayerController extends Component {
   }
 
   onMouseUp(event: EventMouse) {
+    if (event.getButton() !== 0) return;
+    this.onTapOrClick();
+  }
+
+  onTouchEnd(event: EventTouch) {
+    this.onTapOrClick();
+  }
+
+  private onTapOrClick() {
     if (this._startJump) return;
     if (this._pitJumpMode) {
       this.exitPitJumpMode();
