@@ -126,8 +126,11 @@ export class GameManager extends Component {
         }
 
         if (this.playerCtrl) {
-          this.playerCtrl.setInputActive(true);
-          this.scheduleOnce(this._doAutoJump, 0.2);
+          this.playerCtrl.setInputActive(false);
+          this.scheduleOnce(() => {
+            this.playerCtrl!.setInputActive(true);
+            this.scheduleOnce(this._doAutoJump, this.playerCtrl!.autoJumpDelay);
+          }, 0);
         }
         break;
       case GameState.GS_END:
