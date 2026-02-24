@@ -9,6 +9,7 @@ import {
   Vec3,
 } from "cc";
 import { BLOCK_SIZE, PlayerController } from "./PlayerController";
+import { StartMenuContentScale } from "./StartMenuContentScale";
 const { ccclass, property } = _decorator;
 
 enum BlockType {
@@ -140,6 +141,9 @@ export class GameManager extends Component {
         }
         if (this.startMenu) {
           this.startMenu.active = true;
+          this.scheduleOnce(() => {
+            this.startMenu?.getComponent(StartMenuContentScale)?.applyScale();
+          }, 0.1);
         }
         break;
     }
