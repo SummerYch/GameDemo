@@ -7,10 +7,18 @@ import {
   Node,
   Label,
   Vec3,
+  sys,
+  UITransform,
+  view,
+  Color,
+  Widget,
 } from "cc";
 import { BLOCK_SIZE, PlayerController } from "./PlayerController";
 import { StartMenuContentScale } from "./StartMenuContentScale";
 const { ccclass, property } = _decorator;
+
+const ENERGY_STORAGE_KEY = "game_energy";
+const INITIAL_ENERGY = 3;
 
 enum BlockType {
   BT_NONE,
@@ -34,16 +42,69 @@ export class GameManager extends Component {
   public playerCtrl: PlayerController | null = null; // 角色控制器
   @property({ type: Label })
   public stepsLabel: Label | null = null; // 计步器
+  @property({ type: Label, tooltip: "可选，不绑定则运行时在左上角自动创建" })
+  public energyLabel: Label | null = null; // 体力显示（左上角）
 
   private _curState: GameState = GameState.GS_INIT;
+  private _energy: number = INITIAL_ENERGY;
 
   //   start() {
   //     this.generateRoad();
   //   }
   start() {
+    this.loadEnergy();
+    this.ensureEnergyLabel();
+    this.refreshEnergyDisplay();
     this.setCurState(GameState.GS_INIT);
     this.playerCtrl?.node.on("JumpEnd", this.onPlayerJumpEnd, this);
     this.playerCtrl?.node.on("ManualJump", this.onManualJump, this);
+  }
+
+  private loadEnergy() {
+    this._energy = INITIAL_ENERGY;
+    if (sys.localStorage) {
+      const saved = sys.localStorage.getItem(ENERGY_STORAGE_KEY);
+      if (saved != null && saved !== "") {
+        const n = parseInt(saved, 10);
+        if (!isNaN(n) && n >= 0) this._energy = n;
+      }
+      // this._energy = Math.max(this._energy, INITIAL_ENERGY);
+      // sys.localStorage.setItem(ENERGY_STORAGE_KEY, String(this._energy));
+    }
+  }
+
+  private saveEnergy() {
+    if (sys.localStorage) {
+      sys.localStorage.setItem(ENERGY_STORAGE_KEY, String(this._energy));
+    }
+  }
+
+  private ensureEnergyLabel() {
+    if (this.energyLabel) return;
+    const parent = this.node.scene.getChildByName("UICanvas");
+    if (!parent) return;
+    const energyNode = new Node("Energy");
+    energyNode.layer = parent.layer;
+    parent.addChild(energyNode);
+    const ut = energyNode.addComponent(UITransform);
+    ut.setAnchorPoint(0, 1);
+    ut.setContentSize(160, 50);
+    const widget = energyNode.addComponent(Widget);
+    widget.isAlignTop = true;
+    widget.isAlignLeft = true;
+    widget.top = 30;
+    widget.left = 30;
+    widget.updateAlignment();
+    this.energyLabel = energyNode.addComponent(Label);
+    this.energyLabel.string = "";
+    this.energyLabel.fontSize = 28;
+    this.energyLabel.color = new Color(255, 255, 255, 255);
+  }
+
+  private refreshEnergyDisplay() {
+    if (this.energyLabel) {
+      this.energyLabel.string = `x ${this._energy}`;
+    }
   }
 
   private _doAutoJump = () => {
@@ -106,9 +167,13 @@ export class GameManager extends Component {
     return block;
   }
   onStartButtonClicked() {
+    if (this._energy <= 0) return;
     if (this._curState === GameState.GS_END) {
       this.init();
     }
+    this._energy--;
+    this.saveEnergy();
+    this.refreshEnergyDisplay();
     this.setCurState(GameState.GS_PLAYING);
   }
   setCurState(value: GameState) {
@@ -139,6 +204,7 @@ export class GameManager extends Component {
         if (this.playerCtrl) {
           this.playerCtrl.setInputActive(false);
         }
+        this.refreshEnergyDisplay();
         if (this.startMenu) {
           this.startMenu.active = true;
           this.scheduleOnce(() => {
