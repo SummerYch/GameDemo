@@ -18,7 +18,7 @@ import { StartMenuContentScale } from "./StartMenuContentScale";
 const { ccclass, property } = _decorator;
 
 const ENERGY_STORAGE_KEY = "game_energy";
-const INITIAL_ENERGY = 3;
+const INITIAL_ENERGY = 999;
 
 enum BlockType {
   BT_NONE,
