@@ -379,8 +379,8 @@
     "_prefab": null,
     "_lpos": {
       "__type__": "cc.Vec3",
-      "x": 0,
-      "y": 40,
+      "x": -1.298,
+      "y": 60,
       "z": 0
     },
     "_lrot": {
@@ -418,8 +418,8 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 40,
-      "height": 40
+      "width": 50,
+      "height": 80
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -443,18 +443,18 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 214,
-      "g": 41,
-      "b": 41,
+      "r": 252,
+      "g": 248,
+      "b": 248,
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "20835ba4-6145-4fbc-a58a-051ce700aa3e@f9941",
+      "__uuid__": "aa8494d2-c764-4396-b203-423b3d58fa90@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
     "_fillType": 0,
-    "_sizeMode": 1,
+    "_sizeMode": 0,
     "_fillCenter": {
       "__type__": "cc.Vec2",
       "x": 0,
@@ -1039,7 +1039,7 @@
     "_priority": 0,
     "_fov": 45,
     "_fovAxis": 0,
-    "_orthoHeight": 360,
+    "_orthoHeight": 457.6200417536535,
     "_near": 0,
     "_far": 2000,
     "_color": {
@@ -1683,7 +1683,7 @@
     "node": {
       "__id__": 33
     },
-    "_enabled": false,
+    "_enabled": true,
     "__prefab": null,
     "_cameraComponent": {
       "__id__": 35
@@ -2292,9 +2292,9 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 10,
-      "g": 10,
-      "b": 10,
+      "r": 248,
+      "g": 248,
+      "b": 248,
       "a": 255
     },
     "_string": "Mind Your Step 2d",
@@ -2317,9 +2317,9 @@
     "_enableOutline": true,
     "_outlineColor": {
       "__type__": "cc.Color",
-      "r": 250,
-      "g": 245,
-      "b": 245,
+      "r": 10,
+      "g": 6,
+      "b": 6,
       "a": 255
     },
     "_outlineWidth": 3,
