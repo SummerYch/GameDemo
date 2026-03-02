@@ -29,6 +29,10 @@ enum GameState {
   GS_PLAYING,
   GS_END,
 }
+
+/** StartMenu 下 gettili、next 节点，初始隐藏，过关后显示 */
+const START_MENU_END_BUTTON_NAMES = ["gettili", "next"];
+
 @ccclass("GameManager")
 export class GameManager extends Component {
   @property({ type: Prefab })
@@ -47,6 +51,13 @@ export class GameManager extends Component {
 
   private _curState: GameState = GameState.GS_INIT;
   private _energy: number = INITIAL_ENERGY;
+  /** 本局是否到达终点过关（用于区分过关后弹菜单 vs 掉坑结束） */
+  private _reachedFinish: boolean = false;
+
+  onLoad() {
+    // 尽早隐藏获得体力、下一关按钮，避免第一帧显示
+    this.updateStartMenuEndButtons(false);
+  }
 
   //   start() {
   //     this.generateRoad();
@@ -117,6 +128,7 @@ export class GameManager extends Component {
   init() {
     if (this.startMenu) {
       this.startMenu.active = true;
+      this.updateStartMenuEndButtons(false); // 初始隐藏获得体力、下一关
     }
 
     this.generateRoad();
@@ -208,8 +220,9 @@ export class GameManager extends Component {
         if (this.startMenu) {
           this.startMenu.active = true;
           this.scheduleOnce(() => {
+            this.updateStartMenuEndButtons(this._reachedFinish); // 过关则显示 gettili、next（延后一帧确保菜单已激活）
             this.startMenu?.getComponent(StartMenuContentScale)?.applyScale();
-          }, 0.1);
+          }, 0.05);
         }
         break;
     }
@@ -220,8 +233,10 @@ export class GameManager extends Component {
         "" + (moveIndex >= this.roadLength ? this.roadLength : moveIndex);
     }
     this.checkResult(moveIndex);
+    // 仅仍在游戏中且未掉坑时安排下一次自动跳；过关后不再跳
     if (
       this.playerCtrl &&
+      this._curState === GameState.GS_PLAYING &&
       moveIndex < this.roadLength &&
       this._road[moveIndex] !== BlockType.BT_NONE
     ) {
@@ -229,12 +244,39 @@ export class GameManager extends Component {
     }
   }
   checkResult(moveIndex: number) {
-    if (moveIndex < this.roadLength) {
+    const lastIndex = this.roadLength - 1;
+    if (moveIndex <= lastIndex) {
       if (this._road[moveIndex] == BlockType.BT_NONE) {
+        this._reachedFinish = false; // 掉坑
+        this.setCurState(GameState.GS_END);
+      } else if (moveIndex === lastIndex) {
+        // 落在最后一格，视为到达终点过关
+        this._reachedFinish = true;
         this.setCurState(GameState.GS_END);
       }
     } else {
-      this.setCurState(GameState.GS_INIT);
+      // 跳过了最后一格（moveIndex >= roadLength），也视为过关
+      this._reachedFinish = true;
+      this.setCurState(GameState.GS_END);
     }
+  }
+
+  /** 显示/隐藏 StartMenu 下的「获得体力」「下一关」等按钮（递归查找子节点） */
+  private updateStartMenuEndButtons(show: boolean) {
+    if (!this.startMenu) return;
+    for (const name of START_MENU_END_BUTTON_NAMES) {
+      const btn = this.findChildByName(this.startMenu, name);
+      if (btn) btn.active = show;
+    }
+  }
+
+  /** 在节点及其子孙中按名称查找（getChildByName 只查直接子节点） */
+  private findChildByName(root: Node, name: string): Node | null {
+    if (root.name === name) return root;
+    for (let i = 0; i < root.children.length; i++) {
+      const found = this.findChildByName(root.children[i], name);
+      if (found) return found;
+    }
+    return null;
   }
 }
